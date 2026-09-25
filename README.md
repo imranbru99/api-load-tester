@@ -576,3 +576,34 @@ We welcome contributions from the community! Please read our [Contributing Guide
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 👨‍💻 Author & Connect — Let's Build Something Exceptional
+
+I'm actively open to:  
+**Remote Senior Full-Stack Roles · Freelance Contracts · Technical Partnerships · Long-Term Collaborations**  
+in **Laravel · WordPress · React/Next.js · AI-powered Platforms · Security Audits · SaaS Architecture**
+
+📍 **Timezone**: UTC+6 (Dhaka/Rangpur) — flexible overlap for US, EU & Asia  
+⚡ **Available**: Immediately · Production-first · Fast delivery · Transparent communication
+
+| Platform | Link |
+|:---|:---|
+| 🌐 **Portfolio** | [imrandev.bd](https://imrandev.bd/) |
+| 💼 **LinkedIn** | [linkedin.com/in/imranbru99](https://www.linkedin.com/in/imranbru99/) |
+| 🐙 **GitHub** | [github.com/imranbru99](https://github.com/imranbru99) |
+| 🐦 **X / Twitter** | [@imrandev_bd](https://x.com/imrandev_bd) |
+| 📺 **YouTube** | [@ImranDevBD](https://www.youtube.com/@ImranDevBD) |
+| 📸 **Instagram** | [@imranbru99](https://www.instagram.com/imranbru99/) |
+| 📘 **Facebook** | [ExpertImranDev](https://www.facebook.com/ExpertImranDev/) |
+| 🎵 **TikTok** | [@imrandev_bd](https://www.tiktok.com/@imrandev_bd) |
+| 🧵 **Threads** | [@imranbru99](https://www.threads.com/@imranbru99) |
+| 📌 **Pinterest** | [@imrandev_bd](https://www.pinterest.com/imrandev_bd/) |
+| 💬 **WhatsApp** | [+880 1576-918420](http://wa.me/+8801576918420) |
+| 📧 **Email** | [me@imrandev.bd](mailto:me@imrandev.bd) |
+| 🔗 **All Links** | [linktr.ee/ExpertImranDev](https://linktr.ee/ExpertImranDev) |
+
+> *"Security isn't an add-on — it's the foundation. Scale, speed, and trust drive every line of code I write."*  
+> — **Imran Ahmed**
+
