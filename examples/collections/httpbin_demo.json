@@ -1,0 +1,42 @@
+{
+  "id": "col-httpbin-demo",
+  "name": "Live HTTPBin Functional Demo",
+  "description": "Functional suite testing status codes, latency, and headers against httpbin.org",
+  "variables": {
+    "baseUrl": "https://httpbin.org"
+  },
+  "items": [
+    {
+      "id": "demo-1",
+      "name": "GET Request Inspection",
+      "method": "GET",
+      "url": "{{baseUrl}}/get?test=1",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": [
+        { "type": "status_code", "operator": "equals", "value": 200 },
+        { "type": "response_time", "value": 3000 }
+      ]
+    },
+    {
+      "id": "demo-2",
+      "name": "POST JSON Payload",
+      "method": "POST",
+      "url": "{{baseUrl}}/post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "type": "json",
+        "content": {
+          "service": "api-load-tester",
+          "version": "1.0.0"
+        }
+      },
+      "assertions": [
+        { "type": "status_code", "operator": "equals", "value": 200 }
+      ]
+    }
+  ]
+}

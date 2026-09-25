@@ -2,6 +2,9 @@
   "id": "col-rest-sample",
   "name": "Sample REST API Test Suite",
   "description": "Functional test suite covering status codes, JSONPath assertions, and latency checks",
+  "variables": {
+    "baseUrl": "http://localhost:4000"
+  },
   "items": [
     {
       "id": "req-1",

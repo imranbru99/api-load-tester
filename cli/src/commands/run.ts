@@ -43,7 +43,7 @@ export async function runCommand(fileOrUrl: string, options: RunCliOptions): Pro
     process.exit(1);
   }
 
-  // Load environment variables if provided
+  // Load environment variables if provided, or check default paths
   let envVars: Record<string, any> = {};
   if (options.env) {
     if (fs.existsSync(options.env)) {
@@ -60,6 +60,38 @@ export async function runCommand(fileOrUrl: string, options: RunCliOptions): Pro
         // ignore
       }
     }
+  } else {
+    // Check fallback locations for environment files
+    const fallbackPaths = [
+      path.join(path.dirname(fileOrUrl), '../environments/local.json'),
+      path.join(process.cwd(), 'examples/environments/local.json'),
+      path.join(process.cwd(), '../examples/environments/local.json'),
+      path.join(process.cwd(), 'env.json')
+    ];
+    for (const fb of fallbackPaths) {
+      if (fs.existsSync(fb)) {
+        try {
+          envVars = JSON.parse(fs.readFileSync(fb, 'utf8'));
+          break;
+        } catch {}
+      }
+    }
+  }
+
+  // Merge collection-level default variables:
+  // If user explicitly passed --env, explicit env overrides collection variables;
+  // otherwise, collection-defined variables override auto-discovered fallback files.
+  if (targetContent && typeof targetContent === 'object' && targetContent.variables) {
+    if (options.env) {
+      envVars = { ...targetContent.variables, ...envVars };
+    } else {
+      envVars = { ...envVars, ...targetContent.variables };
+    }
+  }
+
+  // Ensure baseUrl is defined, defaulting to --api (default: http://localhost:4000)
+  if (!envVars.baseUrl) {
+    envVars.baseUrl = options.api || 'http://localhost:4000';
   }
 
   // Parse thresholds if provided on CLI
@@ -270,7 +302,11 @@ async function executeCliLoadTest(config: any, options: RunCliOptions, cliThresh
 }
 
 async function executeCliFunctionalTest(collection: any, env: Record<string, any>, options: RunCliOptions) {
+  const defaultBaseUrl = (env.baseUrl || options.api || 'http://localhost:4000').replace(/\/$/, '');
+  const activeEnv: Record<string, any> = { baseUrl: defaultBaseUrl, ...env };
+
   console.log(chalk.yellow(`\n🧪 Running Functional Collection: ${chalk.bold(collection.name || 'Test Suite')}`));
+  console.log(chalk.gray(`Base Target: ${defaultBaseUrl}`));
   const items = collection.items || [];
   console.log(chalk.gray(`Found ${items.length} requests\n`));
 
@@ -280,27 +316,63 @@ async function executeCliFunctionalTest(collection: any, env: Record<string, any
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const t0 = Date.now();
+
+    // Resolve variables in URL
+    let resolvedUrl = (item.url || '').replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_: any, k: string) => {
+      return activeEnv[k] !== undefined ? activeEnv[k] : (k === 'baseUrl' ? defaultBaseUrl : '');
+    });
+
+    // Prepend baseUrl if relative path
+    if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://') && !resolvedUrl.startsWith('ws://') && !resolvedUrl.startsWith('wss://')) {
+      resolvedUrl = `${defaultBaseUrl}${resolvedUrl.startsWith('/') ? '' : '/'}${resolvedUrl}`;
+    }
+
     try {
       const res = await axios({
         method: item.method || 'GET',
-        url: item.url.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_: any, k: string) => env[k] || ''),
+        url: resolvedUrl,
         headers: item.headers,
         data: item.body?.content,
         validateStatus: () => true,
         timeout: 5000
       });
       const duration = Date.now() - t0;
-      const isOk = res.status < 400;
-      if (isOk) {
+
+      // Evaluate Assertions if present
+      let itemPassed = res.status < 400;
+      const assertionMessages: string[] = [];
+
+      if (item.assertions && Array.isArray(item.assertions)) {
+        for (const ast of item.assertions) {
+          if (ast.type === 'status_code') {
+            const expected = Number(ast.value);
+            const ok = ast.operator === 'less_than' ? res.status < expected : res.status === expected;
+            if (!ok) itemPassed = false;
+            assertionMessages.push(`status ${res.status} == ${expected}: ${ok ? 'ok' : 'fail'}`);
+          } else if (ast.type === 'response_time') {
+            const maxMs = Number(ast.value);
+            const ok = duration <= maxMs;
+            if (!ok) itemPassed = false;
+            assertionMessages.push(`latency ${duration}ms <= ${maxMs}ms: ${ok ? 'ok' : 'fail'}`);
+          }
+        }
+      }
+
+      if (itemPassed) {
         passed++;
-        console.log(`   ${chalk.green('✓')} [${item.method}] ${item.name} - ${chalk.gray(res.status + ' (' + duration + 'ms)')}`);
+        console.log(`   ${chalk.green('✓')} [${item.method}] ${item.name} - ${chalk.gray(res.status + ' (' + duration + 'ms)')} ${chalk.dim(resolvedUrl)}`);
       } else {
         failed++;
-        console.log(`   ${chalk.red('✗')} [${item.method}] ${item.name} - ${chalk.red(res.status + ' (' + duration + 'ms)')}`);
+        const reason = assertionMessages.length > 0 ? `[${assertionMessages.join(', ')}]` : `Status ${res.status}`;
+        console.log(`   ${chalk.red('✗')} [${item.method}] ${item.name} - ${chalk.red(reason + ' (' + duration + 'ms)')} ${chalk.dim(resolvedUrl)}`);
       }
     } catch (err: any) {
       failed++;
-      console.log(`   ${chalk.red('✗')} [${item.method}] ${item.name} - ${chalk.red(err.message)}`);
+      let errorMsg = err.message;
+      if (err.code === 'ECONNREFUSED') {
+        errorMsg = `Connection refused to ${resolvedUrl} (hint: start the backend with 'docker compose up -d' or specify target with --api or --env)`;
+      }
+      console.log(`   ${chalk.red('✗')} [${item.method}] ${item.name} - ${chalk.red(errorMsg)}`);
     }
   }
 

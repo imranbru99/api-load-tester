@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://localhost:4000",
+  "apiKey": "alt_secret_token_123",
+  "timeoutMs": 5000
+}
