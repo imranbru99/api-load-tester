@@ -15,7 +15,11 @@
 
 [Quickstart](#-quickstart-in-60-seconds) • [Architecture](#-architecture) • [Feature Matrix](#-feature-comparison-matrix) • [Core Capabilities](#-core-capabilities) • [CLI Manual](#-headless-cli-manual-alt) • [Docker Stack](#-docker-setup--deployment) • [REST API Reference](#-rest-api-reference) • [CI/CD Pipelines](#-cicd-pipeline-integrations)
 
----
+<br />
+
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="API Load Tester Dashboard" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);" />
+</p>
 
 </div>
 
