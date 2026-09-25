@@ -1,0 +1,20 @@
+{
+  "id": "7d0782a5-deaf-448d-a898-e2567b3c8c80",
+  "name": "Postman Sample Demo",
+  "items": [
+    {
+      "id": "692cd47b-3a5e-427a-8e80-f27f2127c81c",
+      "name": "List Users",
+      "method": "GET",
+      "url": "https://httpbin.org/get?page=1",
+      "headers": {},
+      "assertions": [
+        {
+          "type": "status_code",
+          "operator": "less_than",
+          "value": 400
+        }
+      ]
+    }
+  ]
+}

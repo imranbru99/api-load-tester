@@ -1,0 +1,25 @@
+{
+  "info": {
+    "_postman_id": "c92842c1-b664-4e42-9907-fcf81ec01c64",
+    "name": "Postman Sample Demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "https://httpbin.org/get?page=1",
+          "protocol": "https",
+          "host": ["httpbin", "org"],
+          "path": ["get"],
+          "query": [{ "key": "page", "value": "1" }]
+        }
+      }
+    }
+  ]
+}

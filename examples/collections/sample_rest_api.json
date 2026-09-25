@@ -1,0 +1,56 @@
+{
+  "id": "col-rest-sample",
+  "name": "Sample REST API Test Suite",
+  "description": "Functional test suite covering status codes, JSONPath assertions, and latency checks",
+  "items": [
+    {
+      "id": "req-1",
+      "name": "Check Health Endpoint",
+      "method": "GET",
+      "url": "{{baseUrl}}/health",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "operator": "equals",
+          "value": 200,
+          "customMessage": "Health check returns 200 OK"
+        },
+        {
+          "type": "response_time",
+          "value": 500,
+          "customMessage": "Health check responds under 500ms"
+        },
+        {
+          "type": "jsonpath",
+          "target": "$.status",
+          "operator": "equals",
+          "value": "ok",
+          "customMessage": "Status field is 'ok'"
+        }
+      ]
+    },
+    {
+      "id": "req-2",
+      "name": "Fetch Workspaces List",
+      "method": "GET",
+      "url": "{{baseUrl}}/api/workspaces",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "operator": "equals",
+          "value": 200
+        },
+        {
+          "type": "response_time",
+          "value": 800
+        }
+      ]
+    }
+  ]
+}

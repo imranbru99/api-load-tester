@@ -1,0 +1,51 @@
+{
+  "id": "col-auth-chain",
+  "name": "Auth Chaining & Variable Extraction Suite",
+  "description": "Demonstrates extracting bearer token from Response A and injecting into Request B",
+  "items": [
+    {
+      "id": "step-1-login",
+      "name": "Step 1: Authenticate and Extract Token",
+      "method": "POST",
+      "url": "{{baseUrl}}/mock/default/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "type": "json",
+        "content": {
+          "username": "tester",
+          "password": "secret_password"
+        }
+      },
+      "postResponseScript": "const res = pm.response.json();\npm.environment.set('authToken', res.token || 'mock_jwt_token_987xyz');\npm.test('Login returns token', () => {\n  pm.expect(pm.response.code).to.equal(200);\n});",
+      "assertions": [
+        {
+          "type": "status_code",
+          "operator": "equals",
+          "value": 200
+        }
+      ]
+    },
+    {
+      "id": "step-2-secured",
+      "name": "Step 2: Access Secured Endpoint using Extracted Token",
+      "method": "GET",
+      "url": "{{baseUrl}}/mock/default/user/profile",
+      "auth": {
+        "type": "bearer",
+        "token": "{{authToken}}"
+      },
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "operator": "less_than",
+          "value": 400
+        }
+      ]
+    }
+  ]
+}

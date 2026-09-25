@@ -1,0 +1,19 @@
+{
+  "name": "Progressive Stress Test to 1000 VUs",
+  "targetUrl": "http://localhost:4000/health",
+  "method": "GET",
+  "profile": "stress",
+  "stages": [
+    { "duration": 15, "targetVUs": 100 },
+    { "duration": 30, "targetVUs": 300 },
+    { "duration": 30, "targetVUs": 700 },
+    { "duration": 30, "targetVUs": 1000 },
+    { "duration": 15, "targetVUs": 0 }
+  ],
+  "maxRps": 20000,
+  "keepAlive": true,
+  "thresholds": [
+    { "metric": "p95", "operator": "<", "value": 800 },
+    { "metric": "error_rate", "operator": "<", "value": 0.01 }
+  ]
+}

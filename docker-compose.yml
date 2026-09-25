@@ -1,0 +1,229 @@
+name: api-load-tester
+
+services:
+  # ==========================================
+  # 1. Reverse Proxy (Nginx)
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: alt-nginx
+    restart: unless-stopped
+    ports:
+      - "${PORT_HTTP:-80}:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 2. Backend Orchestrator & API (Node.js)
+  # ==========================================
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: alt-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-api_load_tester}
+      - REDIS_URL=redis://redis:6379
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-alt-secret-token-super-secure}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-alt}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-metrics}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 3. Web UI (Next.js 14)
+  # ==========================================
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: alt-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=
+      - INTERNAL_API_URL=http://app:4000
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 4. Distributed Load Worker (Scalable Go Engine)
+  # Scale command: docker compose up -d --scale load-worker=10
+  # ==========================================
+  load-worker:
+    build:
+      context: ./load-worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "${WORKER_CPU_LIMIT:-2.0}"
+          memory: "${WORKER_MEM_LIMIT:-1024M}"
+        reservations:
+          cpus: "0.2"
+          memory: "128M"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep load-worker || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 5. Relational Database (PostgreSQL 16)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: alt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-api_load_tester}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-api_load_tester}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 6. Message Queue & PubSub (Redis 7)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: alt-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 7. Time-Series Metrics (InfluxDB 2.7)
+  # ==========================================
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: alt-influxdb
+    restart: unless-stopped
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USER:-alt_admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-AltSecurePassword123!}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-alt}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-metrics}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-alt-secret-token-super-secure}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "influx ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - alt-network
+
+  # ==========================================
+  # 8. Observability Dashboards (Grafana 11)
+  # ==========================================
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: alt-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - influxdb
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - alt-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  influxdb-data:
+  grafana-data:
+
+networks:
+  alt-network:
+    driver: bridge

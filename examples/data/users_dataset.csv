@@ -1,0 +1,5 @@
+userId,username,role,expectedCode
+101,admin_user,admin,200
+102,moderator_user,moderator,200
+103,standard_user,member,200
+999,invalid_user,guest,404

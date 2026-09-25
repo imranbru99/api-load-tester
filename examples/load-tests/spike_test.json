@@ -1,0 +1,15 @@
+{
+  "name": "Sudden Spike Load Test",
+  "targetUrl": "http://localhost:4000/health",
+  "method": "GET",
+  "profile": "spike",
+  "stages": [
+    { "duration": 10, "targetVUs": 20 },
+    { "duration": 5, "targetVUs": 500 },
+    { "duration": 10, "targetVUs": 20 }
+  ],
+  "thresholds": [
+    { "metric": "p95", "operator": "<", "value": 1500 },
+    { "metric": "error_rate", "operator": "<", "value": 0.05 }
+  ]
+}

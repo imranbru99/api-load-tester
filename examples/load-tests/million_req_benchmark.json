@@ -1,0 +1,16 @@
+{
+  "name": "Million-Request High-Scale Benchmark",
+  "targetUrl": "http://localhost:4000/health",
+  "method": "GET",
+  "profile": "constant",
+  "stages": [
+    { "duration": 60, "targetVUs": 2500 }
+  ],
+  "maxRps": 50000,
+  "keepAlive": true,
+  "connectionsPerWorker": 20000,
+  "thresholds": [
+    { "metric": "p95", "operator": "<", "value": 500 },
+    { "metric": "error_rate", "operator": "<", "value": 0.005 }
+  ]
+}

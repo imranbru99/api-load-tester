@@ -1,0 +1,28 @@
+{
+  "name": "alt-cli",
+  "version": "1.0.0",
+  "description": "CLI Runner for api-load-tester (alt)",
+  "bin": {
+    "alt": "bin/alt.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "axios": "^1.8.1",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "jsonpath-plus": "^10.3.0",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.1",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/ws": "^8.5.14",
+    "typescript": "^5.8.2"
+  }
+}

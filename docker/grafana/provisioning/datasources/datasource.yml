@@ -1,0 +1,25 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://app:4000/api
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: GET
+      directUrl: http://app:4000/api/metrics
+
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: false
+    editable: false
+    jsonData:
+      version: Flux
+      organization: alt
+      defaultBucket: metrics
+    secureJsonData:
+      token: alt-secret-token-super-secure

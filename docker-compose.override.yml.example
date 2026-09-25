@@ -1,0 +1,41 @@
+# Docker Compose Local Development Override Example
+# Copy this file to docker-compose.override.yml for hot reloading during development
+
+version: '3.8'
+
+services:
+  # Mount backend source code for instant hot reload
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/src:/app/src
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]
+
+  # Mount frontend source code for Next.js Fast Refresh
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]
+
+  # Expose raw service ports directly for debugging
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  influxdb:
+    ports:
+      - "8086:8086"
