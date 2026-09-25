@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+build
+.git
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+postgres-data
+redis-data
+influxdb-data
+grafana-data
+test-reports
+reports

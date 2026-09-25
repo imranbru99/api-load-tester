@@ -7,10 +7,8 @@ COPY package.json tsconfig.json ./
 RUN npm install
 
 COPY src ./src
-COPY src/db/init.sql ./dist/db/init.sql
 RUN npm run build
-# Ensure SQL is in dist
-RUN cp -r src/db/init.sql dist/db/init.sql 2>/dev/null || true
+RUN mkdir -p dist/db && cp src/db/init.sql dist/db/init.sql
 
 # Stage 2: Production Slim Runtime
 FROM node:22-alpine AS runner

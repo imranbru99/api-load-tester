@@ -10,7 +10,7 @@ COPY go.mod ./
 RUN go mod download || true
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o load-worker ./cmd/worker/main.go
+RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o load-worker ./cmd/worker/main.go
 
 # Stage 2: Production Minimal Runtime
 FROM alpine:3.20
